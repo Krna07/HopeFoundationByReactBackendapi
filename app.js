@@ -18,6 +18,10 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/", (req, res) => {
+  res.send("Hope Foundation Backend is running!");
+})
+
 app.post("/logged", async (req, res) => {
   try {
     const { name, email, password } = req.body;
