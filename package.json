@@ -4,8 +4,9 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node app.js",
+    "dev": "nodemon index.js",
+    "build" : "npm install"
   },
   "dependencies": {
     "cors": "^2.8.5",
