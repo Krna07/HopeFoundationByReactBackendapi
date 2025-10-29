@@ -1,6 +1,12 @@
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+require('dotenv').config();
+
+
 const { Logged ,query } = require("./userModel");
 
 console.log(Logged,query)
@@ -22,36 +28,88 @@ app.get("/", (req, res) => {
   res.send("Hope Foundation Backend is running!");
 })
 
+// app.post("/logged", async (req, res) => {
+//   try {
+//     const { name, email, password } = req.body;
+//     const user = new Logged({ name, email, password });
+//     await user.save();
+//     console.log("Saved:", name, email, password);
+//     res.json({ message: "User logged successfully", user });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 app.post("/logged", async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    const user = new Logged({ name, email, password });
+
+    // Check if user already exists
+    const existingUser = await Logged.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Save user
+    const user = new Logged({ name, email, password: hashedPassword });
     await user.save();
-    console.log("Saved:", name, email, password);
-    res.json({ message: "User logged successfully", user });
+
+    res.status(201).json({ message: "User registered successfully", user });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-app.post("/login",async(req,res)=>{
-  try{
-    console.log(req.body)
-    const {email,password} = req.body;
-    const user = await Logged.findOne({email:email,password:password})
-    console.log(user._id)
 
-      res.status(200).json({ 
-      message: "Login successful!", 
-      data: user
-  });
+// app.post("/login",async(req,res)=>{
+//   try{
+//     console.log(req.body)
+//     const {email,password} = req.body;
+//     const user = await Logged.findOne({email:email,password:password})
+//     console.log(user._id)
+
+//       res.status(200).json({ 
+//       message: "Login successful!", 
+//       data: user
+//   });
 
 
-  }catch(err){
+//   }catch(err){
+//     res.status(500).json({ error: err.message });
+//   }
+// })
+
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check user exists
+    const user = await Logged.findOne({ email });
+    if (!user) return res.status(400).json({ error: "User not found" });
+
+    // Compare password with hash
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+
+    // Create token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.status(200).json({
+      message: "Login successful!",
+      token, // send token to frontend
+      data: { name: user.name, email: user.email, _id: user._id },
+    });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
-})
+});
+
 
 app.post("/dash",async(req,res)=>{
   try{
