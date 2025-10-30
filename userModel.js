@@ -15,7 +15,31 @@ const querySchema = new mongoose.Schema({
   message:String
 })
 
+const needySchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  phone: {
+    type: String,
+    required: true
+  },
+  story: {
+    type: String,
+    required: true
+  },
+  income: {
+    type: Number,
+    required: true
+  },
+  address: {
+    type: String,
+    required: true
+  }
+});
+
 const Logged = mongoose.model("Logged", userSchema);
 const query = mongoose.model("query",querySchema);
+const Needy = mongoose.model("Needy", needySchema);
 
-module.exports = { Logged,query };
+module.exports = { Logged,query,Needy };

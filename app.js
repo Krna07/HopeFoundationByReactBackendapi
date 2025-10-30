@@ -142,6 +142,35 @@ app.post("/message",(req,res)=>{
     
   }
 })
+
+app.post("/needy-register", async (req, res) => {
+  try {
+    const { name, phone, story, income, address } = req.body;
+
+    // Simple validation
+    if (!name || !phone || !story || !income || !address) {
+      return res.status(400).json({ error: "All fields required" });
+    }
+
+    const needy = new Needy({ name, phone, story, income, address });
+    await needy.save();
+
+    res.status(201).json({ message: "Needy registration successful", needy });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.get("/needy-list", async (req, res) => {
+  try {
+    const needy = await Needy.find();
+    res.json(needy);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
   
 
 app.listen(port, () => {
