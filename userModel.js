@@ -51,8 +51,45 @@ const needySchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+
+const donationSchema = new mongoose.Schema({
+  donorName: {
+    type: String,
+    required: true
+  },
+  donorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Logged", // Logged user schema (donor)
+    required: true
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  cause: {
+    type: String,
+    enum: ["Education", "Healthcare", "Environment", "Fighting Hunger"],
+    required: true
+  },
+  frequency: {
+    type: String,
+    enum: ["One-time", "Recurring"],
+    required: true
+  },
+  paymentMethod: {
+    type: String,
+    enum: ["PhonePe", "Razorpay", "PayPal"],
+    required: true
+  },
+  donatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const Logged = mongoose.model("Logged", userSchema);
 const query = mongoose.model("query",querySchema);
 const Needy = mongoose.model("Needy", needySchema);
+const Donation = mongoose.model("Donation", donationSchema);
 
-module.exports = { Logged,query,Needy };
+module.exports = { Logged,query,Needy ,Donation};
