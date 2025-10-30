@@ -127,6 +127,26 @@ app.post("/dash",async(req,res)=>{
   }
 })
 
+app.post("/needylogin", async (req, res) => {
+  try {
+    const { email, password } = req.body; 
+    const user = await Needy.findOne({ email });
+    if (!user) return res.status(400).json({ error: "User not found" });  
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });  
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {    
+      expiresIn: "1h",  
+    });  
+    res.status(200).json({  
+      message: "Login successful!",  
+      token, 
+      data: { name: user.name, email: user.email, _id: user._id },  
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/message",(req,res)=>{
   try {
     const{name,email,message} = req.body;
@@ -145,22 +165,20 @@ app.post("/message",(req,res)=>{
 
 app.post("/needy-register", async (req, res) => {
   try {
-    const { name, phone, story, income, address } = req.body;
-
-    // Simple validation
-    if (!name || !phone || !story || !income || !address) {
-      return res.status(400).json({ error: "All fields required" });
-    }
-
-    const needy = new Needy({ name, phone, story, income, address });
-    await needy.save();
-
-    res.status(201).json({ message: "Needy registration successful", needy });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const { name, email, password } = req.body;
+    const existingUser = await Needy.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    } 
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new Needy({ name, email, password: hashedPassword });
+    await user.save();
+    res.status(201).json({ message: "Needy registered successfully", user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 });
-
 
 app.get("/needy-list", async (req, res) => {
   try {
