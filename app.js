@@ -165,13 +165,21 @@ app.post("/message",(req,res)=>{
 
 app.post("/needy-register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone, story, income, address } = req.body;
     const existingUser = await Needy.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: "User already exists" });
     } 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new Needy({ name, email, password: hashedPassword });
+      const user = new Needy({
+      name,
+      email,
+      phone,
+      story,
+      income,
+      address,
+      password: hashedPassword,
+    });
     await user.save();
     res.status(201).json({ message: "Needy registered successfully", user });
   } catch (err) {
