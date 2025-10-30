@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 
-const { Logged ,query } = require("./userModel");
+const { Logged ,query ,Needy } = require("./userModel");
 
 console.log(Logged,query)
 
