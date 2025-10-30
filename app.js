@@ -9,7 +9,7 @@ require('dotenv').config();
 
 const { Logged ,query ,Needy } = require("./userModel");
 
-console.log(Logged,query)
+console.log(Logged,query,Needy)
 
 const app = express();
 const port = 5000;
