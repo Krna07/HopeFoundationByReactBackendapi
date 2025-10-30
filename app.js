@@ -200,10 +200,11 @@ app.get("/needy-list", async (req, res) => {
 
 app.post("/donate", async (req, res) => {
   try {
-    const { donorId, amount, cause, frequency, paymentMethod } = req.body;
+    const { donorId, donorName, amount, cause, frequency, paymentMethod } = req.body;
 
     // TODO: create Donation model first
     const donation = await Donation.create({
+      donorName,
       donorId,
       amount,
       cause,
