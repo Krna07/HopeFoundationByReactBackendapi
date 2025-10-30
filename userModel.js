@@ -20,7 +20,16 @@ const needySchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
   phone: {
+    type: String,
+    required: true
+  },
+  password: {
     type: String,
     required: true
   },
@@ -35,8 +44,12 @@ const needySchema = new mongoose.Schema({
   address: {
     type: String,
     required: true
+  },
+  photo: {
+    type: String,
+    default: ""
   }
-});
+}, { timestamps: true });
 
 const Logged = mongoose.model("Logged", userSchema);
 const query = mongoose.model("query",querySchema);
