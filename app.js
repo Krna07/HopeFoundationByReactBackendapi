@@ -221,6 +221,20 @@ app.post("/donate", async (req, res) => {
 app.post("/alldonation", async (req, res) => {
   try {
     const { donatedBy, donatedTo, amount } = req.body;
+
+    existDonor = await AllDonation.findById({donatedBy,donatedTo});
+
+      if (existingDonation) { 
+        existingDonation.amount = Number(existingDonation.amount) + Number(amount);
+        await existingDonation.save();
+
+        return res.json({
+          success: true,
+          message: "Donation updated (amount added)",
+          updatedDonation: existingDonation
+        });
+    }
+
     const allDonation = await AllDonation.create({
       donatedBy,
       donatedTo,
