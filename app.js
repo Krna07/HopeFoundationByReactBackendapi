@@ -247,18 +247,51 @@ app.post("/alldonation", async (req, res) => {
 });
 
 
+import mongoose from 'mongoose'; // Make sure to import mongoose
+
 app.get("/alldonation/:needyId", async (req, res) => {
-  const { needyId } = req.params;
-  const donations = await AllDonation.find({ donatedTo: needyId }).populate("donatedBy");
-  
-  res.json({
-    success: true,
-    data: donations.map(d => ({
-      donorName: d.donatedBy.name,
-      amount: d.amount,
-      date: d.createdAt
-    }))
-  });
+  try {
+    const { needyId } = req.params;
+
+    // --- Best Practice: Validate the ID ---
+    if (!mongoose.Types.ObjectId.isValid(needyId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid Needy ID" 
+      });
+    }
+
+    // --- Find and populate ---
+    const donations = await AllDonation.find({ donatedTo: needyId })
+      .populate("donatedBy")
+      .sort({ createdAt: -1 }); // Bonus: Sort by most recent!
+
+    res.json({
+      success: true,
+      data: donations.map(d => ({
+        // --- Fix 1: Add donation ID for React keys ---
+        _id: d._id, 
+        
+        // --- Fix 2: Handle null donors (optional chaining) ---
+        donorName: d.donatedBy?.name || "Anonymous", 
+        
+        amount: d.amount,
+        
+        // --- Fix 3: Add the message field ---
+        message: d.message || "", // (Assuming 'message' is in your schema)
+        
+        date: d.createdAt
+      }))
+    });
+
+  } catch (err) {
+    // --- Fix 4: Add a try...catch block ---
+    console.error("Error fetching donations:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error. Could not fetch donations." 
+    });
+  }
 });
 
   
