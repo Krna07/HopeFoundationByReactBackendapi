@@ -246,6 +246,21 @@ app.post("/alldonation", async (req, res) => {
   }
 });
 
+
+app.get("/alldonation/:needyId", async (req, res) => {
+  const { needyId } = req.params;
+  const donations = await AllDonation.find({ donatedTo: needyId }).populate("donatedBy");
+  
+  res.json({
+    success: true,
+    data: donations.map(d => ({
+      donorName: d.donatedBy.name,
+      amount: d.amount,
+      date: d.createdAt
+    }))
+  });
+});
+
   
 
 app.listen(port, () => {
