@@ -87,9 +87,31 @@ const donationSchema = new mongoose.Schema({
   }
 });
 
+const allDonationSchema = new mongoose.Schema({
+  donatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Logged",      // who donated
+    required: true
+  },
+  donatedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Needy",       // needy receiver
+    required: true
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  donatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const Logged = mongoose.model("Logged", userSchema);
 const query = mongoose.model("query",querySchema);
 const Needy = mongoose.model("Needy", needySchema);
 const Donation = mongoose.model("Donation", donationSchema);
+const AllDonation = mongoose.model("AllDonation", allDonationSchema);
 
-module.exports = { Logged,query,Needy ,Donation};
+module.exports = { Logged,query,Needy ,Donation ,AllDonation};

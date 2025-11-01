@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 
-const { Logged ,query ,Needy , Donation } = require("./userModel");
+const { Logged ,query ,Needy , Donation ,AllDonation } = require("./userModel");
 
 console.log(Logged,query,Needy)
 
@@ -213,6 +213,20 @@ app.post("/donate", async (req, res) => {
     });
 
     res.json({ message: "Donation successful", donation });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/alldonation", async (req, res) => {
+  try {
+    const { donatedBy, donatedTo, amount } = req.body;
+    const allDonation = await AllDonation.create({
+      donatedBy,
+      donatedTo,
+      amount
+    });
+    res.json({ message: "Donation recorded", allDonation });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
