@@ -272,9 +272,8 @@ app.get("/alldonation/:donorId", async (req, res) => {
   } 
 });
 
-import mongoose from 'mongoose'; // Make sure to import mongoose
 
-app.get("/alldonation/:needyId", async (req, res) => {
+app.get("/alldonation/needy/:needyId", async (req, res) => {
   try {
     const { needyId } = req.params;
 
