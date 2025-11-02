@@ -222,7 +222,7 @@ app.post("/alldonation", async (req, res) => {
   try {
     const { donatedBy, donatedTo, amount } = req.body;
 
-    existingDonation = await AllDonation.findOne({donatedBy,donatedTo});
+    let existingDonation = await AllDonation.findOne({donatedBy,donatedTo});
 
       if (existingDonation) { 
         existingDonation.amount = Number(existingDonation.amount) + Number(amount);
