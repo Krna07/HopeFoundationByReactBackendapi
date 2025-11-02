@@ -154,10 +154,50 @@ const allDonationSchema = new mongoose.Schema(
   }
 );
 
+const organizationSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Organization name is required'],
+      trim: true,
+    },
+    description: {
+      type: String,
+      required: [true, 'Description is required'],
+      trim: true,
+    },
+    website: {
+      type: String,
+      trim: true,
+    },
+    country: {
+      type: String,
+      trim: true,
+    },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      // Optional: Add email validation
+      // match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
+    },
+    category: {
+      type: String,
+      required: [true, 'Category is required'],
+      trim: true,
+    },
+  },
+  {
+    // Automatically adds `createdAt` and `updatedAt` fields
+    timestamps: true,
+  }
+);
+
 const Logged = mongoose.model("Logged", userSchema);
 const query = mongoose.model("query",querySchema);
 const Needy = mongoose.model("Needy", needySchema);
 const Donation = mongoose.model("Donation", donationSchema);
 const AllDonation = mongoose.model("AllDonation", allDonationSchema);
+const Organization = mongoose.model("Organization", organizationSchema);
 
-module.exports = { Logged,query,Needy ,Donation ,AllDonation};
+module.exports = { Logged,query,Needy ,Donation ,AllDonation ,Organization };

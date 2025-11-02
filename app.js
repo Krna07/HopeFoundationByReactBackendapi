@@ -15,7 +15,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 
 
-const { Logged ,query ,Needy , Donation ,AllDonation } = require("./userModel");
+const { Logged ,query ,Needy , Donation ,AllDonation ,Organization } = require("./userModel");
 
 console.log(Logged,query,Needy)
 
@@ -327,6 +327,20 @@ app.get("/alldonationeedy/:needyId", async (req, res) => {
       success: false, 
       message: "Server error. Could not fetch donations." 
     });
+  }
+});
+
+
+// In your main server file (e.g., server.js)
+app.get("/organizations", async (req, res) => { 
+  try {
+    const organizations = await Organization.find(); // Assuming your model is "Organization"
+    res.json({
+      success: true,
+      data: organizations
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
