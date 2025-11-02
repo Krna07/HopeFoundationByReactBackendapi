@@ -5,6 +5,14 @@ const cors = require("cors");
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
+const mongoose = require("mongoose");
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log("✅ Connected to MongoDB"))
+.catch((err) => console.error("❌ MongoDB connection error:", err));
+
 
 
 const { Logged ,query ,Needy , Donation ,AllDonation } = require("./userModel");
@@ -289,6 +297,10 @@ app.get("/alldonationeedy/:needyId", async (req, res) => {
     const donations = await AllDonation.find({ donatedTo: needyId })
       .populate("donatedBy")
       .sort({ createdAt: -1 }); // Bonus: Sort by most recent!
+
+
+
+    console.log(donations)
 
     res.json({
       success: true,
