@@ -273,7 +273,7 @@ app.get("/alldonation/:donorId", async (req, res) => {
 });
 
 
-app.get("/alldonation/needy/:needyId", async (req, res) => {
+app.get("/alldonationeedy/:needyId", async (req, res) => {
   try {
     const { needyId } = req.params;
 
