@@ -191,7 +191,37 @@ const organizationSchema = new mongoose.Schema(
     // Automatically adds `createdAt` and `updatedAt` fields
     timestamps: true,
   }
+);const feedbackSchema = new mongoose.Schema(
+  {
+    fromNeedy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Needy', // The Needy user who is writing the feedback
+      required: true,
+    },
+    toDonor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Logged', // The Donor who will receive the feedback
+      required: true,
+    },
+    donation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'AllDonation', // The specific donation this feedback is for
+      required: true,
+    },
+    note: {
+      type: String,
+      required: [true, 'A thank you note is required.'],
+      trim: true,
+    },
+  },
+  {
+    timestamps: true, // Automatically adds createdAt and updatedAt
+  }
 );
+
+
+
+
 
 const Logged = mongoose.model("Logged", userSchema);
 const query = mongoose.model("query",querySchema);
@@ -199,5 +229,6 @@ const Needy = mongoose.model("Needy", needySchema);
 const Donation = mongoose.model("Donation", donationSchema);
 const AllDonation = mongoose.model("AllDonation", allDonationSchema);
 const Organization = mongoose.model("Organization", organizationSchema);
+const Feedback = mongoose.model("Feedback", feedbackSchema);
 
-module.exports = { Logged,query,Needy ,Donation ,AllDonation ,Organization };
+module.exports = { Logged,query,Needy ,Donation ,AllDonation ,Organization ,Feedback };

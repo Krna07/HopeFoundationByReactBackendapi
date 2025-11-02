@@ -15,7 +15,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 
 
-const { Logged ,query ,Needy , Donation ,AllDonation ,Organization } = require("./userModel");
+const { Logged ,query ,Needy , Donation ,AllDonation ,Organization ,Feedback } = require("./userModel");
 
 console.log(Logged,query,Needy)
 
@@ -310,6 +310,7 @@ app.get("/alldonationeedy/:needyId", async (req, res) => {
         
         // --- Fix 2: Handle null donors (optional chaining) ---
         donorName: d.donatedBy?.name || "Anonymous", 
+        donorId: d.donatedBy?._id || null,
         
         amount: d.amount,
         
@@ -343,6 +344,54 @@ app.get("/organizations", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
+
+app.post("/feedback", async (req, res) => {
+  try {
+    const { fromNeedy, toDonor, donationId, note } = req.body;
+
+    if (!fromNeedy || !toDonor || !donationId || !note) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
+      });
+    }
+
+    // Check donation exists
+    const donation = await AllDonation.findById(donationId);
+    if (!donation) {
+      return res.status(404).json({
+        success: false,
+        message: "Donation not found"
+      });
+    }
+
+    const newFeedback = await Feedback.create({
+      fromNeedy,
+      toDonor,
+      donation: donationId,
+      note
+    });
+
+    // Update donation with thank-you note
+    donation.thankYouNote = note;
+    await donation.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Feedback sent successfully!",
+      data: newFeedback,
+    });
+
+  } catch (err) {
+    console.error("Error sending feedback:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error. Could not send feedback."
+    });
+  }
+});
+
 
   
 
