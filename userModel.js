@@ -87,26 +87,72 @@ const donationSchema = new mongoose.Schema({
   }
 });
 
-const allDonationSchema = new mongoose.Schema({
-  donatedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Logged",      // who donated
-    required: true
+// const allDonationSchema = new mongoose.Schema({
+//   donatedBy: {
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: "Logged",      // who donated
+//     required: true
+//   },
+//   donatedTo: {
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: "Needy",       // needy receiver
+//     required: true
+//   },
+//   amount: {
+//     type: Number,
+//     required: true
+//   },
+//   donatedAt: {
+//     type: Date,
+//     default: Date.now
+//   }
+// });
+
+
+const allDonationSchema = new mongoose.Schema(
+  {
+    donatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Logged",      // who donated
+      required: true
+    },
+    donatedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Needy",       // needy receiver
+      required: true
+    },
+    amount: {
+      type: Number,
+      required: true
+    },
+
+    // --- NEW FIELDS TO POWER YOUR UI ---
+    message: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+
+    cause: {
+      type: String,
+      required: true,
+      default: "General Support" 
+    },
+    status: {
+      type: String,
+      enum: ["Pending", "Allocated", "Delivered", "Completed"],
+      default: "Pending"
+    },
+    thankYouNote: {
+      type: String,
+      trim: true,
+      default: ""
+    }
   },
-  donatedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Needy",       // needy receiver
-    required: true
-  },
-  amount: {
-    type: Number,
-    required: true
-  },
-  donatedAt: {
-    type: Date,
-    default: Date.now
+  {
+    timestamps: true 
   }
-});
+);
 
 const Logged = mongoose.model("Logged", userSchema);
 const query = mongoose.model("query",querySchema);

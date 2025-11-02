@@ -246,6 +246,31 @@ app.post("/alldonation", async (req, res) => {
   }
 });
 
+app.get("/alldonation/:donorId", async (req, res) => {
+  try {
+    const { donorId } = req.params;
+    const donations = await AllDonation.find({ donatedBy: donorId })
+      .populate("donatedTo")
+      .sort({ createdAt: -1 });
+  
+    res.json({
+      success: true,
+      data: donations.map(d => ({
+        _id: d._id,
+        // --- THIS IS THE FIX ---
+        needyName: d.donatedTo?.name || "Anonymous", 
+        amount: d.amount,
+        date: d.createdAt,
+        message: d.message,
+        cause: d.cause, 
+        status: d.status,
+        thankYouNote: d.thankYouNote
+      }))
+    });
+  } catch (err) {
+    // ... (your error handling)
+  } 
+});
 
 import mongoose from 'mongoose'; // Make sure to import mongoose
 
