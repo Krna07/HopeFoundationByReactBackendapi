@@ -2,6 +2,23 @@ const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
 
+
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
+  fileFilter: (req, file, cb) => {
+    // Only allow image mimetypes
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
+
+
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
@@ -48,6 +65,103 @@ app.get("/", (req, res) => {
 //     res.status(500).json({ error: err.message });
 //   }
 // });
+
+app.put('/profileUpdate/:id', upload.single('profilePic'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if a file was actually uploaded
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    }
+    
+    // Find the user in the 'Logged' collection
+    const user = await Logged.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    // Save the image buffer and content type to the user's document
+    user.profilePic.data = req.file.buffer;
+    user.profilePic.contentType = req.file.mimetype;
+    await user.save();
+
+    // Send back the updated user data (excluding sensitive fields)
+    const dataToReturn = { ...user.toObject() };
+    delete dataToReturn.password; // Never send the password
+    delete dataToReturn.profilePic; // Don't send the large buffer back
+    
+    // Add a flag for the frontend to know a pic exists
+    dataToReturn.profilePicExists = true; 
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile picture updated!',
+      data: dataToReturn, // Send the updated user data
+    });
+
+  } catch (err) {
+    console.error("Error in /profileUpdate:", err);
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+});
+
+// --- 2. ROUTE: Serve the Profile Picture ---
+// This provides the image to the <img> tag in React
+app.get('/api/profile/pic/:id', async (req, res) => {
+  try {
+    const user = await Logged.findById(req.params.id);
+
+    // Check if user and picture data exist
+    if (!user || !user.profilePic || !user.profilePic.data) {
+      // You could send a default avatar here if you want
+      return res.status(404).send('No profile picture found.');
+    }
+
+    // Set the HTTP header for the content type (e.g., 'image/jpeg')
+    res.contentType(user.profilePic.contentType);
+    
+    // Send the raw image data (buffer) as the response
+    res.send(user.profilePic.data);
+
+  } catch (err) {
+    console.error("Error in /api/profile/pic:", err);
+    res.status(500).send('Server error');
+  }
+});
+
+// --- 3. ROUTE: Update Profile Text Fields ---
+// This handles the "Save Changes" button for name, bio, etc.
+app.put('/api/profile/textUpdate/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, phone, address, bio } = req.body;
+        
+        // Find user by ID and update them with the new text data
+        const updatedUser = await Logged.findByIdAndUpdate(
+            id,
+            { name, email, phone, address, bio }, 
+            { new: true } // This option returns the *updated* document
+        ).select('-password -profilePic'); // Exclude sensitive fields from the response
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        // Send back the updated user
+        res.status(200).json({
+            success: true,
+            message: 'Profile updated!',
+            data: updatedUser
+        });
+
+    } catch (err) {
+        console.error("Error in /api/profile/textUpdate:", err);
+        res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    }
+});
+
+
 app.post("/logged", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -62,7 +176,7 @@ app.post("/logged", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Save user
-    const user = new Logged({ name, email, password: hashedPassword });
+    const user = new Logged({ name, email, password: hashedPassword});
     await user.save();
 
     res.status(201).json({ message: "User registered successfully", user });
@@ -155,11 +269,11 @@ app.post("/needylogin", async (req, res) => {
   }
 });
 
-app.post("/message",(req,res)=>{
+app.post("/message",async(req,res)=>{
   try {
     const{name,email,message} = req.body;
     console.log(req.body)
-    const newQuery = query.create({
+    const newQuery =await query.create({
       name:name,email:email,message:message
     })
     res.status(200).json({
