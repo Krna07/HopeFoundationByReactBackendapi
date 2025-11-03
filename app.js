@@ -393,6 +393,39 @@ app.post("/feedback", async (req, res) => {
 });
 
 
+
+// --- In your Express server file ---
+// GET route to find all feedback for a specific donor
+app.get("/feedback/donor/:donorId", async (req, res) => {
+  try {
+    const { donorId } = req.params;
+
+    const feedback = await Feedback.find({ toDonor: donorId })
+      .populate("fromNeedy", "name") // <-- This is the CRITICAL part
+      .sort({ createdAt: -1 }); // Show newest first
+
+    if (!feedback) {
+      return res.status(404).json({
+        success: false,
+        message: "No feedback found for this donor."
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: feedback,
+    });
+
+  } catch (err) {
+    console.error("Error fetching donor feedback:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error. Could not fetch feedback."
+    });
+  }
+});
+
+
   
 
 app.listen(port, () => {
