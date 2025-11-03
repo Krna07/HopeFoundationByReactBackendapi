@@ -71,6 +71,26 @@ app.get("/validate", authMiddleware, async (req, res) => {
   console.log(req.userId)
   try {
     const user = await Logged.findById(req.userId).select("-password");
+    const needy = await Needy.findById(req.userId).select("-password");
+    console.log(user)
+
+    if (!user && !needy){
+      return res.status(404).json({ message: "User not found" });
+    }
+    userData = {
+      message: "dataRegain",
+      data: user || needy
+    }
+    return res.json(userData);
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/validateneedy", authMiddleware, async (req, res) => {
+  console.log(req.userId)
+  try {
+    const user = await Needy.findById(req.userId).select("-password");
     console.log(user)
 
     if (!user){
