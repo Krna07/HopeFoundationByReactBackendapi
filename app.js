@@ -49,6 +49,43 @@ app.use((req, res, next) => {
   next();
 });
 
+
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader)
+    return res.status(401).json({ message: "No token provided" });
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
+
+app.get("/validate", authMiddleware, async (req, res) => {
+  console.log(req.userId)
+  try {
+    const user = await Logged.findById(req.userId).select("-password");
+    console.log(user)
+
+    if (!user){
+      return res.status(404).json({ message: "User not found" });
+    }
+    userData = {
+      message: "dataRegain",
+      data: user
+    }
+    return res.json(userData);
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("Hope Foundation Backend is running!");
 })
