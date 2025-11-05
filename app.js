@@ -1,7 +1,24 @@
+// Load environment variables first
+require('dotenv').config();
+
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+const cloudinary = require("cloudinary").v2;
 
+// Configure Cloudinary after loading environment variables
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Log Cloudinary config to verify it's loaded (remove in production)
+console.log("Cloudinary Config:", {
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY ? "***" + process.env.CLOUDINARY_API_KEY.slice(-4) : "NOT SET",
+  api_secret: process.env.CLOUDINARY_API_SECRET ? "***" + process.env.CLOUDINARY_API_SECRET.slice(-4) : "NOT SET"
+});
 
 const multer = require('multer');
 const storage = multer.memoryStorage();
@@ -18,15 +35,10 @@ const upload = multer({
   }
 });
 
-
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
 const mongoose = require("mongoose");
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("✅ Connected to MongoDB"))
 .catch((err) => console.error("❌ MongoDB connection error:", err));
 
@@ -39,7 +51,14 @@ console.log(Logged,query,Needy)
 const app = express();
 const port = 5000;
 
-app.use(cors());
+// Configure CORS to allow requests from frontend
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -123,76 +142,120 @@ app.get("/", (req, res) => {
 //   }
 // });
 
-app.put('/profileUpdate/:id', upload.single('profilePic'), async (req, res) => {
+// app.post('/api/profile/imageUpdate/:id', upload.single('profilePic'), async (req, res) => {
+//   try {
+//     const { id } = req.params;
+    
+//     // Check if a file was actually uploaded
+//     if (!req.file) {
+//       return res.status(400).json({ success: false, message: 'No file uploaded.' });
+//     }
+    
+//     // Find the user in the 'Logged' collection
+//     const user = await Logged.findById(id);
+//     if (!user) {
+//       return res.status(404).json({ success: false, message: 'User not found.' });
+//     }
+
+//     // Save the image buffer and content type to the user's document
+//     user.profilePic.data = req.file.buffer;
+//     user.profilePic.contentType = req.file.mimetype;
+//     await user.save();
+
+//     // Send back the updated user data (excluding sensitive fields)
+//     const dataToReturn = { ...user.toObject() };
+//     delete dataToReturn.password; // Never send the password
+//     delete dataToReturn.profilePic; // Don't send the large buffer back
+    
+//     // Add a flag for the frontend to know a pic exists
+//     dataToReturn.profilePicExists = true; 
+
+//     res.status(200).json({
+//       success: true,
+//       message: 'Profile picture updated!',
+//       data: dataToReturn, // Send the updated user data
+//     });
+
+//   } catch (err) {
+//     console.error("Error in /profileUpdate:", err);
+//     res.status(500).json({ success: false, message: 'Server error', error: err.message });
+//   }
+// });
+
+
+app.post('/api/profile/imageUpdate/:id', upload.single('profilePic'), async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // Check if a file was actually uploaded
+    console.log("Image upload request for user ID:", id);
+
     if (!req.file) {
+      console.log("No file uploaded");
       return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
-    
-    // Find the user in the 'Logged' collection
-    const user = await Logged.findById(id);
-    if (!user) {
+
+    console.log("File received:", {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
+
+    // Validate user exists first
+    const existingUser = await Logged.findById(id);
+    if (!existingUser) {
+      console.log("User not found:", id);
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    // Save the image buffer and content type to the user's document
-    user.profilePic.data = req.file.buffer;
-    user.profilePic.contentType = req.file.mimetype;
-    await user.save();
+    // Convert buffer to base64 for Cloudinary upload
+    const base64String = req.file.buffer.toString('base64');
+    const dataURI = `data:${req.file.mimetype};base64,${base64String}`;
 
-    // Send back the updated user data (excluding sensitive fields)
-    const dataToReturn = { ...user.toObject() };
-    delete dataToReturn.password; // Never send the password
-    delete dataToReturn.profilePic; // Don't send the large buffer back
-    
-    // Add a flag for the frontend to know a pic exists
-    dataToReturn.profilePicExists = true; 
+    console.log("Uploading to Cloudinary...");
+
+    // Upload to Cloudinary using promise-based approach
+    const uploadResult = await cloudinary.uploader.upload(dataURI, {
+      folder: "profile_pics",
+      resource_type: "image",
+      transformation: [
+        { width: 400, height: 400, crop: "fill", gravity: "face" }
+      ]
+    });
+
+    console.log("Cloudinary upload successful:", uploadResult.secure_url);
+
+    // Save Cloudinary URL in DB
+    const updatedUser = await Logged.findByIdAndUpdate(
+      id,
+      { profilePic: uploadResult.secure_url },
+      { new: true }
+    ).select("-password");
+
+    console.log("Database updated successfully. New profilePic URL:", updatedUser.profilePic);
 
     res.status(200).json({
       success: true,
-      message: 'Profile picture updated!',
-      data: dataToReturn, // Send the updated user data
+      message: "Profile picture updated!",
+      data: updatedUser
     });
-
+    
   } catch (err) {
-    console.error("Error in /profileUpdate:", err);
+    console.error("Error in /profile/imageUpdate:", err);
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 });
 
+
 // --- 2. ROUTE: Serve the Profile Picture ---
 // This provides the image to the <img> tag in React
-app.get('/api/profile/pic/:id', async (req, res) => {
-  try {
-    const user = await Logged.findById(req.params.id);
 
-    // Check if user and picture data exist
-    if (!user || !user.profilePic || !user.profilePic.data) {
-      // You could send a default avatar here if you want
-      return res.status(404).send('No profile picture found.');
-    }
-
-    // Set the HTTP header for the content type (e.g., 'image/jpeg')
-    res.contentType(user.profilePic.contentType);
-    
-    // Send the raw image data (buffer) as the response
-    res.send(user.profilePic.data);
-
-  } catch (err) {
-    console.error("Error in /api/profile/pic:", err);
-    res.status(500).send('Server error');
-  }
-});
 
 // --- 3. ROUTE: Update Profile Text Fields ---
 // This handles the "Save Changes" button for name, bio, etc.
-app.put('/api/profile/textUpdate/:id', async (req, res) => {
+app.post('/api/profile/textUpdate/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { name, email, phone, address, bio } = req.body;
+        // console.log(req.body)
         
         // Find user by ID and update them with the new text data
         const updatedUser = await Logged.findByIdAndUpdate(
@@ -264,27 +327,36 @@ app.post("/logged", async (req, res) => {
 
 app.post("/login", async (req, res) => {
   try {
+    console.log("Login request received:", req.body);
     const { email, password } = req.body;
 
     // Check user exists
     const user = await Logged.findOne({ email });
-    if (!user) return res.status(400).json({ error: "User not found" });
+    if (!user) {
+      console.log("User not found for email:", email);
+      return res.status(400).json({ error: "User not found" });
+    }
 
     // Compare password with hash
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+    if (!isMatch) {
+      console.log("Invalid password for user:", email);
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
 
     // Create token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
 
+    console.log("Login successful for user:", email);
     res.status(200).json({
       message: "Login successful!",
       token, // send token to frontend
       data: { name: user.name, email: user.email, _id: user._id },
     });
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ error: err.message });
   }
 });

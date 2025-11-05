@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
 
-mongoose.connect("mongodb+srv://Tushar_110704:2dc1pkOsEx7yJyXz@cluster0.drxa4k1.mongodb.net/HopeFoundation?retryWrites=true&w=majority&appName=Cluster0")
-
 
 // const userSchema = new mongoose.Schema({
 //   name: String,
@@ -16,8 +14,21 @@ const userSchema = new mongoose.Schema({
   profilePic: {
     type: String,
     default: "https://cdn-icons-png.flaticon.com/512/149/149071.png" // default profile pic
+  },
+  phone: {
+    type: String,
+    default: ""
+  },
+  address: {
+    type: String,
+    default: ""
+  },
+  bio: {
+    type: String,
+    default: ""
   }
 });
+
 
 
 const querySchema = new mongoose.Schema({
